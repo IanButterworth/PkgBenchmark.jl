@@ -69,3 +69,37 @@ Benchmarks can be saved and read using `writeresults` and ``readresults` respect
 PkgBenchmark.readresults
 PkgBenchmark.writeresults
 ```
+
+## Running a benchmark suite in CI
+
+A PkgBenchmark suite can be run as part of a package's CI actions, to track for changes in performance.
+
+For instance, once the necessary files are setup a github action could be added as `.github/workflows/benchmark.yml`
+
+```
+name: Run benchmarks
+
+on:
+  pull_request:
+
+jobs:
+  Benchmark:
+    runs-on: ubuntu-latest
+    env:
+      JULIA_DEBUG: BenchmarkCI
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: 1
+      - name: Install dependencies
+        run: julia -e 'using Pkg; pkg"add PkgBenchmark https://github.com/tkf/BenchmarkCI.jl"'
+      - name: Run benchmarks
+        run: julia -e "using BenchmarkCI; BenchmarkCI.judge()"
+      - name: Post results
+        run: julia -e "using BenchmarkCI; BenchmarkCI.postjudge()"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+A full working example of such a setup can be found at https://github.com/tkf/BenchmarkCIExample.jl
